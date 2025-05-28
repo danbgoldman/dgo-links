@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Create Go Link</h1>
+<p>Create a new go link for: <strong>{{ short_path }}</strong></p>
+
+<form method="POST">
+    <div class="form-group">
+        <label for="target_url">Target URL:</label>
+        <input type="text" id="target_url" name="target_url" required>
+    </div>
+    <button type="submit">Create Link</button>
+</form>
+{% endblock %} 

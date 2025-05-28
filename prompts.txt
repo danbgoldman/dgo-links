@@ -1,0 +1,10 @@
+Design a "go link" short URL server using python. It has a sqlite database of
+short links, each of which redirects to a full URL.
+
+Additionally, if an unused short link is accessed, it redirects to a "new link"
+page where the user can add a full URL corresponding to the requested short
+link.
+
+Include stubs for user authentication and authorization, so that new links can
+be associated with their creators and existing links can only be edited by
+their creators.
