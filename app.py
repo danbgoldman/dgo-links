@@ -4,6 +4,7 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from werkzeug.security import generate_password_hash, check_password_hash
 from urllib.parse import urlparse
 import os
+from functools import wraps
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
@@ -13,11 +14,21 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or not current_user.is_admin:
+            flash('Admin access required')
+            return redirect(url_for('view_links'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 # Database Models
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(120), nullable=False)
+    is_admin = db.Column(db.Boolean, default=False)
     links = db.relationship('GoLink', backref='creator', lazy=True)
 
 class GoLink(db.Model):
@@ -62,7 +73,7 @@ def create_link():
         
         if not short_path or not target_url:
             flash('Both short path and target URL are required')
-            return render_template('create_link.html', short_path=short_path, target_url=target_url)
+            return render_template('create_link.html', short_path=short_path or '', target_url=target_url or '')
         
         if not is_valid_url(target_url):
             flash('Please enter a valid URL (including http:// or https://)')
@@ -81,7 +92,7 @@ def create_link():
         flash('Link created successfully')
         return redirect(url_for('view_links'))
     
-    return render_template('create_link.html', short_path=short_path)
+    return render_template('create_link.html', short_path=short_path or '')
 
 @app.route('/edit/<path:short_path>', methods=['GET', 'POST'])
 @login_required
@@ -92,7 +103,7 @@ def edit_link(short_path):
         flash('Link not found')
         return redirect(url_for('view_links'))
     
-    if existing_link.user_id != current_user.id:
+    if existing_link.user_id != current_user.id and not current_user.is_admin:
         flash('You can only edit your own links')
         return redirect(url_for('view_links'))
     
@@ -171,7 +182,7 @@ def delete_link(short_path):
         flash('Link not found')
         return redirect(url_for('view_links'))
     
-    if link.user_id != current_user.id:
+    if link.user_id != current_user.id and not current_user.is_admin:
         flash('You can only delete your own links')
         return redirect(url_for('view_links'))
     
@@ -179,6 +190,58 @@ def delete_link(short_path):
     db.session.commit()
     flash('Link deleted successfully')
     return redirect(url_for('view_links'))
+
+@app.route('/users', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def view_users():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        is_admin = request.form.get('is_admin') == 'on'
+        
+        if User.query.filter_by(username=username).first():
+            flash('Username already exists')
+            return redirect(url_for('view_users'))
+        
+        user = User(username=username, 
+                   password_hash=generate_password_hash(password),
+                   is_admin=is_admin)
+        db.session.add(user)
+        db.session.commit()
+        flash('User created successfully')
+        return redirect(url_for('view_users'))
+    
+    users = User.query.all()
+    return render_template('users.html', users=users)
+
+@app.route('/users/<int:user_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_user(user_id):
+    if user_id == current_user.id:
+        flash('You cannot delete your own account')
+        return redirect(url_for('view_users'))
+    
+    user = User.query.get_or_404(user_id)
+    db.session.delete(user)
+    db.session.commit()
+    flash('User deleted successfully')
+    return redirect(url_for('view_users'))
+
+@app.route('/users/<int:user_id>/toggle-admin', methods=['POST'])
+@login_required
+@admin_required
+def toggle_admin(user_id):
+    if user_id == current_user.id:
+        flash('You cannot modify your own admin status')
+        return redirect(url_for('view_users'))
+    
+    user = User.query.get_or_404(user_id)
+    user.is_admin = not user.is_admin
+    db.session.commit()
+    flash(f'User {"promoted to" if user.is_admin else "demoted from"} admin')
+    return redirect(url_for('view_users'))
 
 if __name__ == '__main__':
     with app.app_context():
