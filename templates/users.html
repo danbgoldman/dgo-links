@@ -49,7 +49,7 @@
 
     <div style="flex: 1;">
         <h2>Create New User</h2>
-        <form method="POST" action="{{ url_for('view_users') }}">
+        <form method="POST" action="{{ url_for('view_users') }}" style="max-width: 400px;">
             <div class="form-group">
                 <label for="username">Username:</label>
                 <input type="text" id="username" name="username" required>
@@ -58,9 +58,9 @@
                 <label for="password">Password:</label>
                 <input type="password" id="password" name="password" required>
             </div>
-            <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
-                <input type="checkbox" id="is_admin" name="is_admin">
-                <label for="is_admin">Make Admin</label>
+            <div class="form-group" style="margin-top: 1rem;">
+                <input type="checkbox" id="is_admin" name="is_admin" style="margin-right: 0.5rem;">
+                <label for="is_admin" style="display: inline;">Make Admin</label>
             </div>
             <button type="submit" class="btn">Create User</button>
         </form>
