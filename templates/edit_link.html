@@ -1,19 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Create Go Link</h1>
+<h1>Edit Go Link</h1>
+<p>Edit go link: <strong>{{ short_path }}</strong></p>
 
 <form method="POST">
-    <div class="form-group">
-        <label for="short_path">Short Path:</label>
-        <input type="text" id="short_path" name="short_path" 
-               value="{{ short_path }}"
-               placeholder="my-link"
-               pattern="[a-zA-Z0-9-_]+"
-               title="Use only letters, numbers, hyphens, and underscores"
-               required>
-        <small class="help-text">Enter a short path using only letters, numbers, hyphens, and underscores</small>
-    </div>
     <div class="form-group">
         <label for="target_url">Target URL:</label>
         <input type="text" id="target_url" name="target_url" 
@@ -24,7 +15,7 @@
                required>
         <small class="help-text">Enter a complete URL including http:// or https://</small>
     </div>
-    <button type="submit">Create Link</button>
+    <button type="submit">Update Link</button>
 </form>
 
 <style>

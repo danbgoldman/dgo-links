@@ -2,6 +2,7 @@ from flask import Flask, render_template, redirect, request, flash, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+from urllib.parse import urlparse
 import os
 
 app = Flask(__name__)
@@ -32,33 +33,93 @@ def load_user(user_id):
 # Routes
 @app.route('/')
 def index():
-    return render_template('index.html')
+    if current_user.is_authenticated:
+        return redirect(url_for('view_links'))
+    return redirect(url_for('login'))
 
 @app.route('/<path:short_path>')
 def redirect_link(short_path):
     link = GoLink.query.filter_by(short_path=short_path).first()
     if link:
         return redirect(link.target_url)
-    return redirect(url_for('create_link', short_path=short_path))
+    return redirect(url_for('create_link', shortlink=short_path))
 
-@app.route('/create/<path:short_path>', methods=['GET', 'POST'])
+def is_valid_url(url):
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+    except:
+        return False
+
+@app.route('/create', methods=['GET', 'POST'])
 @login_required
-def create_link(short_path):
+def create_link():
+    # Get short_path from query parameter or form data
+    short_path = request.args.get('shortlink') or request.form.get('short_path')
+    
+    if request.method == 'POST':
+        target_url = request.form.get('target_url')
+        
+        if not short_path or not target_url:
+            flash('Both short path and target URL are required')
+            return render_template('create_link.html', short_path=short_path, target_url=target_url)
+        
+        if not is_valid_url(target_url):
+            flash('Please enter a valid URL (including http:// or https://)')
+            return render_template('create_link.html', short_path=short_path, target_url=target_url)
+        
+        # Check if short path already exists
+        existing_link = GoLink.query.filter_by(short_path=short_path).first()
+        if existing_link:
+            flash('This short path is already taken')
+            return render_template('create_link.html', short_path=short_path, target_url=target_url)
+        
+        # Create new link
+        link = GoLink(short_path=short_path, target_url=target_url, user_id=current_user.id)
+        db.session.add(link)
+        db.session.commit()
+        flash('Link created successfully')
+        return redirect(url_for('view_links'))
+    
+    return render_template('create_link.html', short_path=short_path)
+
+@app.route('/edit/<path:short_path>', methods=['GET', 'POST'])
+@login_required
+def edit_link(short_path):
+    existing_link = GoLink.query.filter_by(short_path=short_path).first()
+    
+    if not existing_link:
+        flash('Link not found')
+        return redirect(url_for('view_links'))
+    
+    if existing_link.user_id != current_user.id:
+        flash('You can only edit your own links')
+        return redirect(url_for('view_links'))
+    
     if request.method == 'POST':
         target_url = request.form.get('target_url')
         if not target_url:
             flash('Target URL is required')
-            return render_template('create_link.html', short_path=short_path)
+            return render_template('edit_link.html', short_path=short_path, target_url=target_url)
         
-        link = GoLink(short_path=short_path, target_url=target_url, user_id=current_user.id)
-        db.session.add(link)
+        if not is_valid_url(target_url):
+            flash('Please enter a valid URL (including http:// or https://)')
+            return render_template('edit_link.html', short_path=short_path, target_url=target_url)
+        
+        existing_link.target_url = target_url
         db.session.commit()
-        return redirect(url_for('index'))
+        flash('Link updated successfully')
+        return redirect(url_for('view_links'))
     
-    return render_template('create_link.html', short_path=short_path)
+    return render_template('edit_link.html', 
+                         short_path=short_path,
+                         target_url=existing_link.target_url)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('view_links'))
+        
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
@@ -66,7 +127,7 @@ def login():
         
         if user and check_password_hash(user.password_hash, password):
             login_user(user)
-            return redirect(url_for('index'))
+            return redirect(url_for('view_links'))
         flash('Invalid username or password')
     return render_template('login.html')
 
@@ -95,7 +156,7 @@ def logout():
 @app.route('/links')
 @login_required
 def view_links():
-    user_only = request.args.get('user_only', 'false').lower() == 'true'
+    user_only = request.args.get('user_only', 'true').lower() == 'true'
     if user_only:
         links = GoLink.query.filter_by(user_id=current_user.id).all()
     else:
