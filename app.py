@@ -152,9 +152,19 @@ def register():
             flash('Username already exists')
             return render_template('register.html')
         
-        user = User(username=username, password_hash=generate_password_hash(password))
+        # Check if this is the first user
+        is_first_user = User.query.count() == 0
+        
+        user = User(
+            username=username, 
+            password_hash=generate_password_hash(password),
+            is_admin=is_first_user  # Make first user an admin
+        )
         db.session.add(user)
         db.session.commit()
+        
+        if is_first_user:
+            flash('First user created with admin privileges')
         return redirect(url_for('login'))
     return render_template('register.html')
 
