@@ -21,6 +21,8 @@
             background-color: #333;
             padding: 1rem;
             margin-bottom: 2rem;
+            position: relative;
+            z-index: 1;
         }
         .nav-content {
             max-width: 1200px;
@@ -52,10 +54,27 @@
         .user-info a:hover {
             color: #ff8787;
         }
+        .flash-container {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 400px;
+            width: 100%;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
         .flash {
             padding: 1rem;
-            margin-bottom: 1rem;
             border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            animation: slideInTop 0.3s ease-out, fadeOutTop 0.5s ease-out 4.5s forwards;
+            opacity: 1;
+            transform: translateY(0);
         }
         .flash.error {
             background-color: #ffebee;
@@ -71,6 +90,26 @@
             background-color: #e3f2fd;
             color: #1565c0;
             border: 1px solid #bbdefb;
+        }
+        @keyframes slideInTop {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        @keyframes fadeOutTop {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(-100%);
+            }
         }
         .btn {
             display: inline-block;
@@ -227,7 +266,7 @@
             </div>
         </div>
     </nav>
-    <div class="container">
+    <div class="flash-container">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -235,7 +274,22 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
+    </div>
+    <div class="container">
         {% block content %}{% endblock %}
     </div>
+    <script>
+        // Remove flash messages after animation completes
+        document.addEventListener('DOMContentLoaded', function() {
+            const flashMessages = document.querySelectorAll('.flash');
+            flashMessages.forEach(function(message) {
+                message.addEventListener('animationend', function(e) {
+                    if (e.animationName === 'fadeOut') {
+                        message.remove();
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html> 
