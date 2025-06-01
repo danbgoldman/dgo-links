@@ -178,11 +178,14 @@ def logout():
 @login_required
 def view_links():
     user_only = request.args.get('user_only', 'true').lower() == 'true'
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
     if user_only:
-        links = GoLink.query.filter_by(user_id=current_user.id).all()
+        pagination = GoLink.query.filter_by(user_id=current_user.id).paginate(page=page, per_page=per_page, error_out=False)
     else:
-        links = GoLink.query.all()
-    return render_template('links.html', links=links, user_only=user_only)
+        pagination = GoLink.query.paginate(page=page, per_page=per_page, error_out=False)
+    links = pagination.items
+    return render_template('links.html', links=links, user_only=user_only, pagination=pagination)
 
 @app.route('/links/<path:short_path>/delete', methods=['POST'])
 @login_required
