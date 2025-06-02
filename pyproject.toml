@@ -1,7 +1,7 @@
 [project]
-name = "go-links"
+name = "dgo-links"
 version = "0.1.0"
-description = "Add your description here"
+description = "A link shortening server with user-defined short links"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = []

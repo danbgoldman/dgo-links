@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Go Links</h1>
+<h1>Links</h1>
 
 <div class="filter-options">
     <a href="{{ url_for('view_links', user_only='true') }}" class="button {% if user_only %}active{% endif %}">My Links</a>

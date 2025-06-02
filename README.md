@@ -13,7 +13,7 @@ A simple URL shortener application built with Flask. Create short, memorable lin
   - Edit or delete any link
 - First registered user automatically becomes an admin
 - URL validation
-- Clean, modern UI
+- No-frills UI
 
 ## Setup
 
