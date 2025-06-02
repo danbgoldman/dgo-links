@@ -1,11 +1,20 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Links</h1>
+<h1>Go Links</h1>
+
+<form method="get" action="{{ url_for('view_links') }}" style="margin-bottom: 1rem; display: flex; gap: 0.5rem; align-items: center;">
+    <input type="hidden" name="user_only" value="{{ 'true' if user_only else 'false' }}">
+    <input type="text" name="q" placeholder="Search links..." value="{{ q|default('') }}" style="flex: 1; padding: 0.5rem; border-radius: 4px; border: 1px solid #ccc;">
+    <button type="submit" class="btn">Search</button>
+    {% if q %}
+        <a href="{{ url_for('view_links', user_only='true' if user_only else 'false') }}" class="btn btn-secondary">Clear</a>
+    {% endif %}
+</form>
 
 <div class="filter-options">
-    <a href="{{ url_for('view_links', user_only='true') }}" class="button {% if user_only %}active{% endif %}">My Links</a>
-    <a href="{{ url_for('view_links', user_only='false') }}" class="button {% if not user_only %}active{% endif %}">All Links</a>
+    <a href="{{ url_for('view_links', user_only='true', q=q) }}" class="button {% if user_only %}active{% endif %}">My Links</a>
+    <a href="{{ url_for('view_links', user_only='false', q=q) }}" class="button {% if not user_only %}active{% endif %}">All Links</a>
 </div>
 
 {% if links %}

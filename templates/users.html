@@ -66,4 +66,16 @@
         </form>
     </div>
 </div>
+
+{% if pagination.pages > 1 %}
+<div class="pagination" style="margin-top: 20px; text-align: center;">
+    {% if pagination.has_prev %}
+        <a href="{{ url_for('view_users', page=pagination.prev_num) }}" class="btn">&laquo; Prev</a>
+    {% endif %}
+    <span>Page {{ pagination.page }} of {{ pagination.pages }}</span>
+    {% if pagination.has_next %}
+        <a href="{{ url_for('view_users', page=pagination.next_num) }}" class="btn">Next &raquo;</a>
+    {% endif %}
+</div>
+{% endif %}
 {% endblock %} 

@@ -5,6 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from urllib.parse import urlparse
 import os
 from functools import wraps
+from sqlalchemy import or_
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
@@ -180,12 +181,16 @@ def view_links():
     user_only = request.args.get('user_only', 'true').lower() == 'true'
     page = request.args.get('page', 1, type=int)
     per_page = 10
+    q = request.args.get('q', '').strip()
+    query = GoLink.query
     if user_only:
-        pagination = GoLink.query.filter_by(user_id=current_user.id).paginate(page=page, per_page=per_page, error_out=False)
-    else:
-        pagination = GoLink.query.paginate(page=page, per_page=per_page, error_out=False)
+        query = query.filter_by(user_id=current_user.id)
+    if q:
+        query = query.filter(or_(GoLink.short_path.contains(q), GoLink.target_url.contains(q)))
+    query = query.order_by(GoLink.short_path.asc())
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     links = pagination.items
-    return render_template('links.html', links=links, user_only=user_only, pagination=pagination)
+    return render_template('links.html', links=links, user_only=user_only, pagination=pagination, q=q)
 
 @app.route('/links/<path:short_path>/delete', methods=['POST'])
 @login_required
@@ -208,6 +213,8 @@ def delete_link(short_path):
 @login_required
 @admin_required
 def view_users():
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
@@ -225,8 +232,9 @@ def view_users():
         flash('User created successfully')
         return redirect(url_for('view_users'))
     
-    users = User.query.all()
-    return render_template('users.html', users=users)
+    pagination = User.query.order_by(User.username.asc()).paginate(page=page, per_page=per_page, error_out=False)
+    users = pagination.items
+    return render_template('users.html', users=users, pagination=pagination)
 
 @app.route('/users/<int:user_id>/delete', methods=['POST'])
 @login_required
