@@ -209,32 +209,35 @@ def delete_link(short_path):
     flash('Link deleted successfully')
     return redirect(url_for('view_links'))
 
-@app.route('/users', methods=['GET', 'POST'])
+@app.route('/users', methods=['GET'])
 @login_required
 @admin_required
 def view_users():
     page = request.args.get('page', 1, type=int)
     per_page = 10
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        is_admin = request.form.get('is_admin') == 'on'
-        
-        if User.query.filter_by(username=username).first():
-            flash('Username already exists')
-            return redirect(url_for('view_users'))
-        
-        user = User(username=username, 
-                   password_hash=generate_password_hash(password),
-                   is_admin=is_admin)
-        db.session.add(user)
-        db.session.commit()
-        flash('User created successfully')
-        return redirect(url_for('view_users'))
-    
     pagination = User.query.order_by(User.username.asc()).paginate(page=page, per_page=per_page, error_out=False)
     users = pagination.items
     return render_template('users.html', users=users, pagination=pagination)
+
+@app.route('/users', methods=['POST'])
+@login_required
+@admin_required
+def create_user():
+    username = request.form.get('username')
+    password = request.form.get('password')
+    is_admin = request.form.get('is_admin') == 'on'
+
+    if User.query.filter_by(username=username).first():
+        flash('Username already exists')
+        return redirect(url_for('view_users'))
+
+    user = User(username=username, 
+                password_hash=generate_password_hash(password),
+                is_admin=is_admin)
+    db.session.add(user)
+    db.session.commit()
+    flash('User created successfully')
+    return redirect(url_for('view_users'))
 
 @app.route('/users/<int:user_id>/delete', methods=['POST'])
 @login_required
