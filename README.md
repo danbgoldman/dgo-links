@@ -1,6 +1,23 @@
-# Go Links
+# D-Go Links
 
-A simple URL shortener application built with Flask. Create short, memorable links that redirect to longer URLs.
+A simple URL shortener application built with Flask. Create short, memorable
+links that redirect to longer URLs. 
+
+A go-link is a short keyword that can be entered directly into your browser’s
+address bar to quickly access internet resources. You can read more about
+go-links [here](https://yiou.me/blog/posts/google-go-link).
+
+There are lots of implementations of go-links around the internet, but
+most of them seem to have a lot of extra cruft: They either use external cloud
+services, or require Chrome extensions, or have extensive dependencies. I just
+wanted a simple server I could host in a VM or Kubernetes for a relatively
+small user base.
+
+(It was also an excuse for me to try something more than toy
+coding with Cursor. Vibe-coded in a couple of hours!)
+
+And, it's called D-Go because I learned about go-links when I worked at Google,
+where my login used to be dgo@.
 
 ## Features
 
